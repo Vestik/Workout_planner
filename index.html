@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Planner</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 15px 20px;
+            background-color: #343a40;
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .menu-button {
+            cursor: pointer;
+            font-size: 20px;
+            color: #fff;
+            background: none;
+            border: none;
+            outline: none;
+            margin-right: 15px;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            color: #fff;
+            text-decoration: none;
+            background-color: #dc3545;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            position: absolute;
+            right: 20px;
+            top: 12px;
+        }
+
+        .back-button:hover {
+            background-color: #c82333;
+            transform: scale(1.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .menu {
+            display: none;
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #343a40;
+            transition: background-color 0.3s ease;
+        }
+
+        .menu-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .day-list, .exercise-list, .history-list {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .day-button, .exercise, .history-item {
+            display: block;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .day-button {
+            border-left: 6px solid #28a745;
+        }
+
+        .exercise {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffc107;
+            color: #343a40;
+        }
+
+        .exercise span {
+            font-size: 16px;
+        }
+
+        .history-item {
+            background-color: #e9ecef;
+            border-left: 6px solid #17a2b8;
+        }
+
+        .day-button:hover, .exercise:hover, .history-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .exercise-menu {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .exercise-menu button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: #343a40;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .exercise-menu button:hover {
+            background-color: #495057;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+            color: #343a40;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 20px;
+            }
+
+            .menu-item {
+                font-size: 14px;
+            }
+
+            .day-button, .exercise, .history-item {
+                font-size: 16px;
+            }
+
+            .exercise span {
+                font-size: 14px;
+            }
+
+            .back-button {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+                top: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="menu-button" onclick="toggleMenu()">☰</button>
+        <h1>Workout Planner</h1>
+        <button class="back-button" onclick="goBack('day-list', 'exercise-list')">⟵</button>
+    </div>
+
+    <div class="menu" id="menu">
+        <div class="menu-item" onclick="handleMenuAction(addDay)">Přidat den</div>
+        <div class="menu-item" onclick="handleMenuAction(addExercise)">Přidat cvik</div>
+    </div>
+
+    <div class="day-list" id="day-list">
+        <!-- Dny se zobrazí zde -->
+    </div>
+
+    <div class="exercise-list" id="exercise-list" style="display: none;">
+        <!-- Cviky se zobrazí zde -->
+    </div>
+
+    <div class="history-list" id="history-list" style="display: none;">
+        <!-- Historie cviku se zobrazí zde -->
+    </div>
+
+    <script>
+        let currentDay = null;
+        let currentExercise = null;
+        const days = {};
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function handleMenuAction(action) {
+            action();
+            toggleMenu();
+        }
+
+        function addDay() {
+            const dayName = prompt('Zadejte název dne:');
+            if (dayName) {
+                if (!days[dayName]) {
+                    days[dayName] = [];
+                    const dayList = document.getElementById('day-list');
+                    const dayButton = document.createElement('div');
+                    dayButton.className = 'day-button';
+                    dayButton.textContent = dayName;
+                    dayButton.onclick = function() {
+                        openDay(dayName);
+                    };
+                    dayList.appendChild(dayButton);
+                } else {
+                    alert('Den již existuje!');
+                }
+            }
+        }
+
+        function openDay(dayName) {
+            currentDay = dayName;
+            document.getElementById('day-list').style.display = 'none';
+            const exerciseList = document.getElementById('exercise-list');
+            exerciseList.style.display = 'block';
+            exerciseList.innerHTML = `<h2>${dayName}</h2>`;
+            days[dayName].forEach((exercise, index) => {
+                const exerciseDiv = document.createElement('div');
+                exerciseDiv.className = 'exercise';
+                exerciseDiv.id = `exercise-${index}`;
+                exerciseDiv.innerHTML = `<span>${exercise.name}</span> <span>${exercise.weight} kg</span> <span>${exercise.reps} opakování</span>`;
+
+                const exerciseMenu = document.createElement('div');
+                exerciseMenu.className = 'exercise-menu';
+                exerciseMenu.innerHTML = `
+                    <button onclick="addHistory(${index})">1</button>
+                    <button onclick="openExercise(${index})">2</button>
+                    <button onclick="deleteExercise(${index})">3</button>
+                    <button disabled>4</button>
+                `;
+                exerciseDiv.appendChild(exerciseMenu);
+                exerciseList.appendChild(exerciseDiv);
+            });
+        }
+
+        function addExercise() {
+            if (!currentDay) {
+                alert('Musíte nejprve vybrat den!');
+                return;
+            }
+
+            const exerciseName = prompt('Zadejte název cviku:');
+            if (exerciseName) {
+                const weight = prompt('Zadejte váhu (kg):');
+                const reps = prompt('Zadejte počet opakování:');
+
+                if (weight && reps) {
+                    const exercise = { name: exerciseName, weight, reps, history: [] };
+                    days[currentDay].push(exercise);
+                    openDay(currentDay);
+                } else {
+                    alert('Musíte zadat váhu i počet opakování!');
+                }
+            }
+        }
+
+        function openExercise(index) {
+            currentExercise = { ...days[currentDay][index], index };
+            document.getElementById('exercise-list').style.display = 'none';
+            const historyList = document.getElementById('history-list');
+            historyList.style.display = 'block';
+            historyList.innerHTML = `<h2>${currentExercise.name}</h2>`;
+            if (currentExercise.history.length > 0) {
+                historyList.innerHTML += `<div class="history-item"><strong>Poslední hodnota:</strong> ${currentExercise.history[0].weight} kg, ${currentExercise.history[0].reps} opakování</div>`;
+                currentExercise.history.forEach((entry, idx) => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.textContent = `#${idx + 1} ${entry.weight} kg, ${entry.reps} opakování`;
+                    historyList.appendChild(historyItem);
+                });
+            } else {
+                historyList.innerHTML += `<div class="history-item">Žádná historie zatím není.</div>`;
+            }
+        }
+
+        function addHistory(index) {
+            const weight = prompt('Zadejte váhu (kg):');
+            const reps = prompt('Zadejte počet opakování:');
+            if (weight && reps) {
+                days[currentDay][index].history.unshift({ weight, reps });
+                days[currentDay][index].weight = weight;
+                days[currentDay][index].reps = reps;
+
+                // Update on the exercise list page
+                const exerciseDiv = document.getElementById(`exercise-${index}`);
+                exerciseDiv.innerHTML = `<span>${days[currentDay][index].name}</span> <span>${weight} kg</span> <span>${reps} opakování</span>`;
+
+                const exerciseMenu = document.createElement('div');
+                exerciseMenu.className = 'exercise-menu';
+                exerciseMenu.innerHTML = `
+                    <button onclick="addHistory(${index})">1</button>
+                    <button onclick="openExercise(${index})">2</button>
+                    <button onclick="deleteExercise(${index})">3</button>
+                    <button disabled>4</button>
+                `;
+                exerciseDiv.appendChild(exerciseMenu);
+
+                openDay(currentDay);
+            } else {
+                alert('Musíte zadat váhu i počet opakování!');
+            }
+        }
+
+        function deleteExercise(index) {
+            if (confirm('Opravdu chcete tento cvik odstranit?')) {
+                days[currentDay].splice(index, 1);
+                openDay(currentDay);
+            }
+        }
+
+        function goBack(previousId, currentId) {
+            document.getElementById(currentId).style.display = 'none';
+            document.getElementById(previousId).style.display = 'block';
+        }
+    </script>
+</body>
+</html>
