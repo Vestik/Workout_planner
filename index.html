@@ -218,7 +218,19 @@
     <script>
         let currentDay = null;
         let currentExercise = null;
-        const days = {};
+        let days = {};
+
+        function saveData() {
+            localStorage.setItem('workoutDays', JSON.stringify(days));
+        }
+
+        function loadData() {
+            const storedDays = localStorage.getItem('workoutDays');
+            if (storedDays) {
+                days = JSON.parse(storedDays);
+                renderDays();
+            }
+        }
 
         function toggleMenu() {
             const menu = document.getElementById('menu');
@@ -235,17 +247,25 @@
             if (dayName) {
                 if (!days[dayName]) {
                     days[dayName] = [];
-                    const dayList = document.getElementById('day-list');
-                    const dayButton = document.createElement('div');
-                    dayButton.className = 'day-button';
-                    dayButton.textContent = dayName;
-                    dayButton.onclick = function() {
-                        openDay(dayName);
-                    };
-                    dayList.appendChild(dayButton);
+                    saveData();
+                    renderDays();
                 } else {
                     alert('Den již existuje!');
                 }
+            }
+        }
+
+        function renderDays() {
+            const dayList = document.getElementById('day-list');
+            dayList.innerHTML = '';
+            for (const dayName in days) {
+                const dayButton = document.createElement('div');
+                dayButton.className = 'day-button';
+                dayButton.textContent = dayName;
+                dayButton.onclick = function() {
+                    openDay(dayName);
+                };
+                dayList.appendChild(dayButton);
             }
         }
 
@@ -288,6 +308,7 @@
                 if (weight && reps) {
                     const exercise = { name: exerciseName, weight, reps, history: [] };
                     days[currentDay].push(exercise);
+                    saveData();
                     openDay(currentDay);
                 } else {
                     alert('Musíte zadat váhu i počet opakování!');
@@ -321,21 +342,9 @@
                 days[currentDay][index].history.unshift({ weight, reps });
                 days[currentDay][index].weight = weight;
                 days[currentDay][index].reps = reps;
+                saveData();
 
                 // Update on the exercise list page
-                const exerciseDiv = document.getElementById(`exercise-${index}`);
-                exerciseDiv.innerHTML = `<span>${days[currentDay][index].name}</span> <span>${weight} kg</span> <span>${reps} opakování</span>`;
-
-                const exerciseMenu = document.createElement('div');
-                exerciseMenu.className = 'exercise-menu';
-                exerciseMenu.innerHTML = `
-                    <button onclick="addHistory(${index})">1</button>
-                    <button onclick="openExercise(${index})">2</button>
-                    <button onclick="deleteExercise(${index})">3</button>
-                    <button disabled>4</button>
-                `;
-                exerciseDiv.appendChild(exerciseMenu);
-
                 openDay(currentDay);
             } else {
                 alert('Musíte zadat váhu i počet opakování!');
@@ -345,6 +354,7 @@
         function deleteExercise(index) {
             if (confirm('Opravdu chcete tento cvik odstranit?')) {
                 days[currentDay].splice(index, 1);
+                saveData();
                 openDay(currentDay);
             }
         }
@@ -353,6 +363,9 @@
             document.getElementById(currentId).style.display = 'none';
             document.getElementById(previousId).style.display = 'block';
         }
+
+        // Load data on page load
+        window.onload = loadData;
     </script>
 </body>
 </html>
